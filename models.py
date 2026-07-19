@@ -39,3 +39,7 @@ class CrawlRequest(BaseModel):
 class CrawlResponse(BaseModel):
     pages_visited: int
     results: list[ScrapeResponse]
+
+class Insights(BaseModel):
+    summary: str
+    key_points: list[str]
