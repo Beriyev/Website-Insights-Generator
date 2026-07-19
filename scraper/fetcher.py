@@ -1,9 +1,10 @@
 import asyncio
 from playwright.async_api import async_playwright
 import httpx
+from core.config import FETCH_TIMEOUT, RENDER_TIMEOUT, USER_AGENT, STATIC_LENGTH_THRESHOLD
 
 async def fetch_static(url: str) -> str:
-    async with httpx.AsyncClient(timeout=10.0,headers={"User-Agent": "Mozilla/5.0"}) as client:
+    async with httpx.AsyncClient(timeout=FETCH_TIMEOUT,headers={"User-Agent": USER_AGENT}) as client:
         try:
             response = await client.get(url)
             response.raise_for_status()
@@ -20,7 +21,7 @@ async def fetch_rendered(url: str) -> str:
         browser = await client.chromium.launch(headless = True)
         page = await browser.new_page()
         try:
-            await page.goto(url, timeout = 15000)
+            await page.goto(url, timeout = RENDER_TIMEOUT)
             await page.wait_for_load_state("networkidle")
             html = await page.content()
             return html
@@ -32,17 +33,7 @@ async def fetch_rendered(url: str) -> str:
 
 async def fetch(url: str) -> str:
     html = await fetch_static(url)
-    if(len(html)<3000):
+    if(len(html)<STATIC_LENGTH_THRESHOLD):
         print("Static failed, using rendered")
         html = await fetch_rendered(url)
     return html
-
-
-if __name__ == "__main__":
-    import asyncio
-
-    async def main():
-        html = await fetch("https://react-shopping-cart-67954.firebaseapp.com/")
-        print(len(html))
-
-    asyncio.run(main())
