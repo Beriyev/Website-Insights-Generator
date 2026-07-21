@@ -9,5 +9,6 @@ async def analyze_route(req: AnalyzeRequest):
     try:
         insights = await analyze(req.url)
     except Exception as e:
-        raise HTTPException(status_code=422,detail="Could not Analyze.")
+        print(f"EXCEPTION TYPE: {type(e).__name__}, MESSAGE: {e!r}")
+        raise HTTPException(status_code=422, detail=f"{type(e).__name__}: {e}")
     return AnalyzeResponse(url=req.url,**insights.model_dump())

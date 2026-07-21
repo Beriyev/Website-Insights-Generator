@@ -11,5 +11,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+@app.get("/")
+def home():
+    return {"status": "running"}
+
 app.include_router(scrape.router)
 app.include_router(analyze.router)

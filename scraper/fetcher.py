@@ -1,4 +1,3 @@
-import asyncio
 from playwright.async_api import async_playwright
 import httpx
 from core.config import FETCH_TIMEOUT, RENDER_TIMEOUT, USER_AGENT, STATIC_LENGTH_THRESHOLD

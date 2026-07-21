@@ -7,5 +7,5 @@ STATIC_LENGTH_THRESHOLD = 3000
 
 MAX_CRAWL_PAGES = 10
 
-OLLAMA_LLM_MODEL = "qwen3.5:9b" 
+OLLAMA_LLM_MODEL = "qwen2.5:7b-instruct" 
 OLLAMA_HOST="http://localhost:11434"
