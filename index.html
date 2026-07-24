@@ -203,6 +203,8 @@
     <div class="modes">
       <button class="mode-btn active" data-mode="scrape">scrape</button>
       <button class="mode-btn" data-mode="analyze">analyze</button>
+      <button class="mode-btn" data-mode="crawl">crawl</button>
+      <button class="mode-btn" data-mode="crawl-analyze">crawl+analyze</button>
       <div class="modes-row" style="margin-left:auto;">
         <button class="run-btn" id="run-btn">run →</button>
       </div>
@@ -246,16 +248,18 @@
 
     resultEl.classList.remove("visible");
     resultEl.innerHTML = "";
-    setStatus(mode === "scrape" ? "fetching + extracting..." : "fetching + extracting + analyzing...");
+    setStatus(statusForMode(mode));
     runBtn.disabled = true;
 
-    const endpoint = mode === "scrape" ? "/scrape" : "/analyze";
+    const endpoint = endpointForMode(mode);
+    const needsMaxPages = mode === "crawl" || mode === "crawl-analyze";
+    const body = needsMaxPages ? { url, max_pages: 10 } : { url };
 
     try {
       const res = await fetch(API_BASE + endpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ url })
+        body: JSON.stringify(body)
       });
 
       if (!res.ok) {
@@ -273,12 +277,35 @@
     }
   });
 
+  function endpointForMode(m) {
+    if (m === "scrape") return "/scrape";
+    if (m === "analyze") return "/analyze";
+    if (m === "crawl") return "/crawl";
+    return "/crawl-analyze";
+  }
+
+  function statusForMode(m) {
+    if (m === "scrape") return "fetching + extracting...";
+    if (m === "analyze") return "fetching + extracting + analyzing...";
+    if (m === "crawl") return "crawling site...";
+    return "crawling + analyzing site...";
+  }
+
   function setStatus(text, isErr = false) {
     statusEl.textContent = text;
     statusEl.classList.toggle("err", isErr);
   }
 
   function render(mode, data) {
+    if (mode === "crawl") {
+      renderCrawl(data);
+      return;
+    }
+    if (mode === "crawl-analyze") {
+      renderCrawlAnalyze(data);
+      return;
+    }
+
     let html = "";
 
     html += `<p class="meta-line"><b>${escapeHtml(data.title || "untitled")}</b> — ${escapeHtml(data.url || "")}</p>`;
@@ -296,6 +323,63 @@
       }
     } else {
       html += `<div class="card"><h2>Extracted content</h2><p class="raw-text">${escapeHtml(data.text || "")}</p></div>`;
+    }
+
+    resultEl.innerHTML = html;
+    resultEl.classList.add("visible");
+  }
+
+  function renderCrawl(data) {
+    const failed = Array.isArray(data.failed_pages) ? data.failed_pages : [];
+    let html = `<p class="meta-line"><b>${data.pages_visited ?? 0} pages visited</b> — ${data.success_count ?? 0} succeeded, ${failed.length} failed</p>`;
+
+    const results = Array.isArray(data.results) ? data.results : [];
+    results.forEach(page => {
+      html += `<div class="card">
+        <h2>${escapeHtml(page.title || "untitled")}</h2>
+        <p class="meta-line">${escapeHtml(page.url || "")}</p>
+        <p class="raw-text">${escapeHtml((page.text || "").slice(0, 400))}${(page.text || "").length > 400 ? "..." : ""}</p>
+      </div>`;
+    });
+
+    if (failed.length) {
+      html += `<div class="card"><h2>Failed</h2><ul class="points">`;
+      failed.forEach(u => {
+        html += `<li>${escapeHtml(u)}</li>`;
+      });
+      html += `</ul></div>`;
+    }
+
+    resultEl.innerHTML = html;
+    resultEl.classList.add("visible");
+  }
+
+  function renderCrawlAnalyze(data) {
+    const failed = Array.isArray(data.failed_pages) ? data.failed_pages : [];
+    let html = `<p class="meta-line"><b>${data.pages_visited ?? 0} pages visited</b> — ${data.success_count ?? 0} succeeded, ${failed.length} failed</p>`;
+
+    const results = Array.isArray(data.results) ? data.results : [];
+    results.forEach(page => {
+      html += `<div class="card">
+        <h2>${escapeHtml(page.title || "untitled")}</h2>
+        <p class="meta-line">${escapeHtml(page.url || "")}</p>
+        <p>${escapeHtml(page.summary || "")}</p>`;
+      if (Array.isArray(page.key_points) && page.key_points.length) {
+        html += `<ul class="points">`;
+        page.key_points.forEach(kp => {
+          html += `<li>${escapeHtml(kp)}</li>`;
+        });
+        html += `</ul>`;
+      }
+      html += `</div>`;
+    });
+
+    if (failed.length) {
+      html += `<div class="card"><h2>Failed</h2><ul class="points">`;
+      failed.forEach(u => {
+        html += `<li>${escapeHtml(u)}</li>`;
+      });
+      html += `</ul></div>`;
     }
 
     resultEl.innerHTML = html;

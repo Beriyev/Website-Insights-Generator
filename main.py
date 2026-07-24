@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from routes import scrape, analyze, crawl
+from routes import scrape, analyze, crawl, crawl_analyze
 
 app = FastAPI()
 
@@ -18,3 +18,6 @@ def home():
 app.include_router(scrape.router)
 app.include_router(analyze.router)
 app.include_router(crawl.router)
+app.include_router(crawl_analyze.router)
+
+

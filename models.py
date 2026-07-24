@@ -39,7 +39,21 @@ class CrawlRequest(BaseModel):
 class CrawlResponse(BaseModel):
     pages_visited: int
     results: list[ScrapeResponse]
+    failed_pages: list[str]
+    success_count: int 
 
 class Insights(BaseModel):
     summary: str
     key_points: list[str]
+
+class AnalyzedPage(BaseModel):
+    url: str
+    title: str | None = None
+    summary: str
+    key_points: list[str]
+
+class CrawledAnalyzedResponse(BaseModel):
+    pages_visited: int
+    results: list[AnalyzedPage]
+    failed_pages: list[str]
+    success_count: int
